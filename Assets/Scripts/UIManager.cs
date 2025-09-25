@@ -6,20 +6,28 @@ using UnityEngine.UI;
 public class UIManager : MonoBehaviour
 {
     [Header("References")] 
-    public GameObject startPanel;
     public Button startButton;
-    public GameObject retryPanel;
     public Button retryButton;
     public TMP_Text scoreText;
  
+    // Components
+    GameManager _gameManager;
+    
     // Events
     public Action StartButtonClicked;
     public Action RetryButtonClicked;
     
     void Start()
     {
+        _gameManager = GetComponent<GameManager>();
+        _gameManager.ScoreChanged += SetScoreUI;
+        _gameManager.GameEnded += ShowRetryButton;
+        
         startButton.onClick.AddListener(OnStartButtonClicked);      
         retryButton.onClick.AddListener(OnRetryButtonClicked);      
+        
+        startButton.gameObject.SetActive(true);
+        retryButton.gameObject.SetActive(false);
     }
 
     void OnDestroy()
@@ -28,24 +36,25 @@ public class UIManager : MonoBehaviour
         retryButton.onClick.RemoveListener(OnRetryButtonClicked);
     }
 
+    void ShowRetryButton()
+    {
+        retryButton.gameObject.SetActive(true);
+    }
+
     void OnStartButtonClicked()
     {
         StartButtonClicked?.Invoke();
-        
-        startPanel.SetActive(false);;
+        startButton.gameObject.SetActive(false);
     }
     
     void OnRetryButtonClicked()
     {
         RetryButtonClicked?.Invoke();
-        
-        retryPanel.SetActive(false);
-        startPanel.SetActive(true);
+        retryButton.gameObject.SetActive(false);
     }
 
-    public void SetGameOver(int score)
+    void SetScoreUI(int score)
     {
-        retryPanel.SetActive(true);
-        scoreText.text = $"Your Score: {score}";
+        scoreText.text = score.ToString();
     }
 }

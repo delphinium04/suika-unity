@@ -1,40 +1,41 @@
-using System;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Suika : MonoBehaviour
 {
-    public bool IsMoving { get; private set; }
-    int Level { get; set; }
-    int _maxLevel = 5;
-
-    public Color[] colors = new Color[5] { Color.white, Color.magenta, Color.cyan, Color.red, Color.yellow };
-
     // Components
     Rigidbody2D _rigidbody2D;
+
+    public bool IsMoving { get; private set; }
+    public Color[] colors = { Color.white, Color.red, Color.cyan, Color.magenta, Color.yellow, Color.gray };
+
     readonly float _velocityThreshold = 1f;
     readonly float _levelScaleIncrease = 0.5f; // 1 -> 1.5 -> 2 -> ...
+    int _maxLevel = 6;
+    int _level;
 
     void Awake()
     {
         IsMoving = false;
-        Level = 1;
+
+        _level = Random.Range(1, 4);
     }
 
     void Start()
     {
         _rigidbody2D = GetComponent<Rigidbody2D>();
+        SettingLevel();
     }
 
     void FixedUpdate()
     {
         IsMoving = _rigidbody2D.linearVelocity.magnitude > _velocityThreshold;
+    }
 
-        if (transform.position.y < -15)
-        {
-            GameManager.Instance.EndGame();
-        }
+    void SettingLevel()
+    {
+        float scale = 1f + (_level - 1) * _levelScaleIncrease;
+        transform.localScale = Vector3.one * scale;
+        gameObject.GetComponent<SpriteRenderer>().color = colors[_level - 1];
     }
 
     void Upgrade(Suika other)
@@ -43,19 +44,16 @@ public class Suika : MonoBehaviour
         Vector3 otherPosition = other.transform.position;
         Destroy(other.gameObject);
 
-        Level++;
-        if (Level > _maxLevel)
+        _level++;
+        GameManager.Instance.AddScore(_level * 2);
+        if (_level > _maxLevel)
         {
-            GameManager.Instance.AddScore(Level * 2);
             Destroy(gameObject);
+            return;
         }
-        
-        transform.position = (otherPosition + transform.position) / 2;
-        float scale = 1f + (Level - 1) * _levelScaleIncrease;
-        transform.localScale = Vector3.one * scale;
-        gameObject.GetComponent<SpriteRenderer>().color = colors[Level-1];
 
-        GameManager.Instance.AddScore(Level * 2);
+        transform.position = (otherPosition + transform.position) / 2;
+        SettingLevel();
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -64,6 +62,6 @@ public class Suika : MonoBehaviour
             return;
 
         var otherSuika = collision.gameObject.GetComponent<Suika>();
-        if (otherSuika.Level == Level) Upgrade(otherSuika);
+        if (otherSuika._level == _level) Upgrade(otherSuika);
     }
 }

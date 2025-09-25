@@ -1,17 +1,30 @@
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(InputManager))]
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance { get; private set; }
-    
     // Components
     UIManager _uiManager;
     SuikaManager _suikaManager;
     
-    // Game Variables
+    // References
+    public TriggerEventHelper suikaTrigger;
+    
+    public static GameManager Instance { get; private set; }
+    public Action<int> ScoreChanged;
+    public Action GameEnded;
+    
+    int Score
+    {
+        get => _score;
+        set
+        {
+            _score = value;
+            ScoreChanged?.Invoke(_score);
+        }
+    }
     int _score;
-    bool _isGameOver = false;
 
     void Awake()
     {
@@ -29,14 +42,9 @@ public class GameManager : MonoBehaviour
         _uiManager = GetComponent<UIManager>();
         _suikaManager = GetComponent<SuikaManager>();
 
+        suikaTrigger.Enter += GameOver;
         _uiManager.StartButtonClicked += UI_OnStartButtonClicked;
-
         _suikaManager.enabled = false;
-    }
-
-    void OnDestroy()
-    {
-        // _uiManager.StartButtonClicked -= UI_OnStartButtonClicked;
     }
 
     void UI_OnStartButtonClicked()
@@ -44,24 +52,20 @@ public class GameManager : MonoBehaviour
         StartGame();
     }
 
-    public void StartGame()
+    void StartGame()
     {
-        _isGameOver = false;
+        Score = 0;
         _suikaManager.enabled = true;
-        _suikaManager.ResetSuika();
-
-        _score = 0;
     }
 
     public void AddScore(int score)
     {
-        _score += score;
+        Score += score;
     }
 
-    public void EndGame()
+    void GameOver(Collider2D _)
     {
-        if (_isGameOver) return;
-        _isGameOver = true;
-        _uiManager.SetGameOver(_score);
+        _suikaManager.enabled = false;
+        GameEnded?.Invoke();
     }
 }

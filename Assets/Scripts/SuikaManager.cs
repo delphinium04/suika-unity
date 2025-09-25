@@ -9,42 +9,47 @@ public class SuikaManager : MonoBehaviour
 
     // Preset
     [Header("References")] [SerializeField]
-    Camera mainCamera;
+    GameObject suikaPrefab;
 
-    [SerializeField] GameObject suikaPrefab;
-    [SerializeField] Transform suikaParent;
 
     // settings
-    float _defaultY = 7f;
-    float _defaultXMin = -3.2f;
-    float _defaultXMax = 3.2f;
-    float _touchCooldown = 2f;
-    float _waitTimeThreshold = 12f;
+    const float DefaultY = 7f;
+    const float DefaultXMin = -3.2f;
+    const float DefaultXMax = 3.2f;
+    const float TouchCooldown = 2f;
+    const float WaitTimeThreshold = 12f;
 
     // variables
+    Camera _mainCamera;
     Suika _currentSuika;
+    Transform _suikaParent;
+
     bool _isSettled = true;
     bool _isTouchBegan; // Track 끝 이후 KeepTouching에 들어가는 상태 방지
 
     void Start()
     {
-        if (!mainCamera) mainCamera = Camera.main;
-        _inputManager = GetComponent<InputManager>();
+        _mainCamera = Camera.main;
+        _suikaParent = new GameObject("SuikaParent").transform;
 
+        _inputManager = GetComponent<InputManager>();
         _inputManager.Touched += Input_OnTouched;
     }
 
-    void OnDestroy()
+    void OnEnable()
     {
-        // _inputManager.Touched -= Input_OnTouched;
+        DestroyAllSuika();
     }
 
-    public void ResetSuika()
+    void DestroyAllSuika()
     {
-        foreach (Transform child in suikaParent)
+        _currentSuika = null;
+        if (!_suikaParent) return;
+        foreach (Transform child in _suikaParent)
         {
             Destroy(child.gameObject);
         }
+        Destroy(_suikaParent);
     }
 
     void Input_OnTouched(Touch touch)
@@ -92,7 +97,7 @@ public class SuikaManager : MonoBehaviour
     {
         _isTouchBegan = false;
         _currentSuika.GetComponent<Rigidbody2D>().simulated = true;
-        StartCoroutine(nameof(TrackSuika));
+        StartCoroutine(nameof(WaitForSuikaToSettle));
     }
 
     Suika InstantiateSuika(Vector2 spawnPosition)
@@ -101,28 +106,28 @@ public class SuikaManager : MonoBehaviour
             suikaPrefab,
             spawnPosition,
             Quaternion.identity,
-            suikaParent);
+            _suikaParent);
         return go.GetComponent<Suika>();
     }
 
-    IEnumerator TrackSuika()
+    IEnumerator WaitForSuikaToSettle()
     {
         _isSettled = false;
 
         // waitTime 대기
         float startTime = Time.time;
-        yield return new WaitForSeconds(_touchCooldown);
+        yield return new WaitForSeconds(TouchCooldown);
 
         // suika IsMoving || 흐른 시간 확인
         do
         {
             yield return null;
-            if (Time.time - startTime > _waitTimeThreshold) break;
+            if (Time.time - startTime > WaitTimeThreshold) break;
 
             var isBreakable = true;
-            for (var i = 0; i < suikaParent.childCount && isBreakable; i++)
+            for (var i = 0; i < _suikaParent.childCount && isBreakable; i++)
             {
-                var suika = suikaParent.GetChild(i).GetComponent<Suika>();
+                var suika = _suikaParent.GetChild(i).GetComponent<Suika>();
                 isBreakable &= !suika.IsMoving;
             }
 
@@ -134,9 +139,9 @@ public class SuikaManager : MonoBehaviour
 
     Vector2 ConvertTouchToValidPosition(Touch touch)
     {
-        Vector3 position = mainCamera.ScreenToWorldPoint(touch.position);
-        position.x = Mathf.Clamp(position.x, _defaultXMin, _defaultXMax);
-        position.y = _defaultY;
+        Vector3 position = _mainCamera.ScreenToWorldPoint(touch.position);
+        position.x = Mathf.Clamp(position.x, DefaultXMin, DefaultXMax);
+        position.y = DefaultY;
 
         return position;
     }
