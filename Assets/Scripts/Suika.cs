@@ -45,7 +45,7 @@ public class Suika : MonoBehaviour
         Destroy(other.gameObject);
 
         _level++;
-        GameManager.Instance.AddScore(_level * 2);
+        Managers.Game.AddScore(_level * 2);
         if (_level > _maxLevel)
         {
             Destroy(gameObject);

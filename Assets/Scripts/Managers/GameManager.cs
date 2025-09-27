@@ -4,15 +4,15 @@ using UnityEngine;
 [RequireComponent(typeof(InputManager))]
 public class GameManager : MonoBehaviour
 {
+    // References
+    public TriggerEventHelper suikaTrigger;
+    
     // Components
     UIManager _uiManager;
     SuikaManager _suikaManager;
     
-    // References
-    public TriggerEventHelper suikaTrigger;
-    
-    public static GameManager Instance { get; private set; }
     public Action<int> ScoreChanged;
+    public Action GameStarted;
     public Action GameEnded;
     
     int Score
@@ -26,21 +26,10 @@ public class GameManager : MonoBehaviour
     }
     int _score;
 
-    void Awake()
-    {
-        if (Instance)
-        {
-            Destroy(gameObject);
-        }
-
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-    }
-
     void Start()
     {
-        _uiManager = GetComponent<UIManager>();
-        _suikaManager = GetComponent<SuikaManager>();
+        _uiManager = Managers.UI;
+        _suikaManager = Managers.Suika;
 
         suikaTrigger.Enter += GameOver;
         _uiManager.StartButtonClicked += UI_OnStartButtonClicked;
@@ -50,6 +39,7 @@ public class GameManager : MonoBehaviour
     void UI_OnStartButtonClicked()
     {
         StartGame();
+        GameStarted?.Invoke();
     }
 
     void StartGame()

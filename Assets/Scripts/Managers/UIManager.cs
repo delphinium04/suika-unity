@@ -20,20 +20,20 @@ public class UIManager : MonoBehaviour
     void Start()
     {
         _gameManager = GetComponent<GameManager>();
-        _gameManager.ScoreChanged += SetScoreUI;
-        _gameManager.GameEnded += ShowRetryButton;
-        
-        startButton.onClick.AddListener(OnStartButtonClicked);      
-        retryButton.onClick.AddListener(OnRetryButtonClicked);      
-        
-        startButton.gameObject.SetActive(true);
-        retryButton.gameObject.SetActive(false);
+        BindEvents();
+
     }
 
-    void OnDestroy()
+    void BindEvents()
     {
-        startButton.onClick.RemoveListener(OnStartButtonClicked);
-        retryButton.onClick.RemoveListener(OnRetryButtonClicked);
+        _gameManager.ScoreChanged += SetScoreUI;
+        _gameManager.GameEnded += ShowRetryButton;
+
+        startButton.onClick.AddListener(OnStartButtonClicked);
+        retryButton.onClick.AddListener(OnRetryButtonClicked);
+
+        startButton.gameObject.SetActive(true);
+        retryButton.gameObject.SetActive(false);
     }
 
     void ShowRetryButton()

@@ -2,20 +2,17 @@ using System;
 using System.Collections;
 using UnityEngine;
 
+[RequireComponent(typeof(InputManager))]
 public class SuikaManager : MonoBehaviour
 {
-    // Components
-    InputManager _inputManager;
-
     // Preset
     [Header("References")] [SerializeField]
     GameObject suikaPrefab;
 
-
     // settings
-    const float DefaultY = 7f;
-    const float DefaultXMin = -3.2f;
-    const float DefaultXMax = 3.2f;
+    const float DefaultY = 4f;
+    const float DefaultXMin = -6f;
+    const float DefaultXMax = 6f;
     const float TouchCooldown = 2f;
     const float WaitTimeThreshold = 12f;
 
@@ -27,16 +24,25 @@ public class SuikaManager : MonoBehaviour
     bool _isSettled = true;
     bool _isTouchBegan; // Track 끝 이후 KeepTouching에 들어가는 상태 방지
 
+    void Awake()
+    {
+        enabled = false;
+    }
+
     void Start()
     {
         _mainCamera = Camera.main;
         _suikaParent = new GameObject("SuikaParent").transform;
 
-        _inputManager = GetComponent<InputManager>();
-        _inputManager.Touched += Input_OnTouched;
+        Managers.Input.Touched += Input_OnTouched;
     }
 
     void OnEnable()
+    {
+        ShowSuikaPreview();
+    }
+
+    void OnDisable()
     {
         DestroyAllSuika();
     }
@@ -49,7 +55,6 @@ public class SuikaManager : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
-        Destroy(_suikaParent);
     }
 
     void Input_OnTouched(Touch touch)
@@ -79,12 +84,17 @@ public class SuikaManager : MonoBehaviour
         }
     }
 
+    void ShowSuikaPreview()
+    {
+        _currentSuika = InstantiateSuika(Vector2.up * DefaultY);
+        _currentSuika.GetComponent<Rigidbody2D>().simulated = false;
+    }
+
     void StartTouching(Touch touch)
     {
         _isTouchBegan = true;
         Vector2 touchWorldPosition = ConvertTouchToValidPosition(touch);
-        _currentSuika = InstantiateSuika(touchWorldPosition);
-        _currentSuika.GetComponent<Rigidbody2D>().simulated = false;
+        _currentSuika.transform.position = touchWorldPosition;
     }
 
     void KeepTouching(Touch touch)
@@ -135,6 +145,7 @@ public class SuikaManager : MonoBehaviour
         } while (true);
 
         _isSettled = true;
+        ShowSuikaPreview();
     }
 
     Vector2 ConvertTouchToValidPosition(Touch touch)
